@@ -2,11 +2,11 @@ import mysql from "mysql"; //MySQL package
 
 //Creating database connection
 const connection = mysql.createConnection({
-    host: "localhost",
+    host: "sql6.freesqldatabase.com",
     port: "3306",
-    user: "root",
-    password: "Karan@2002",
-    database: "finance_management",
+    user: "sql6691938",
+    password: "Heg37efmyy",
+    database: "sql6691938",
     timezone: "utc"
 });
 
