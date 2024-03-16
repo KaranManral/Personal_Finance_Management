@@ -6,11 +6,11 @@ import mysql from "mysql";
 describe('App Test', () => {
     //Creating SQL connection to rollback changes made during test
     const connection = mysql.createConnection({
-        host: "localhost",
+        host: "sql6.freesqldatabase.com",
         port: "3306",
-        user: "root",
-        password: "Karan@2002",
-        database: "finance_management",
+        user: "sql6691938",
+        password: "Heg37efmyy",
+        database: "sql6691938",
         timezone: "utc"
     });
 
