@@ -211,7 +211,13 @@ To run the Personal Finance Manager API, follow these steps:
 npm install
 ```
 
-2. Start the application by running:
+2. Build Frontend by running:
+
+```bash
+npm run build
+```
+
+3. Start the application by running:
 
 ```bash
 npm start
