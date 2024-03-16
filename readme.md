@@ -11,14 +11,14 @@ http://localhost:3030
 
 ## Endpoints
 
-### POST /register
+### POST /api/register
 
 Description: Add new user.
 
 #### Request
 
 - Method: POST
-- Path: /register
+- Path: /api/register
 - Body: User data object
 
 Example Request Body:
@@ -35,14 +35,14 @@ Example Request Body:
 - Status Code: 200 OK
 - Body: {msg:"User Added Successfully"}
 
-### POST /login
+### POST /api/login
 
 Description: Login user into his/her account.
 
 #### Request
 
 - Method: POST
-- Path: /login
+- Path: /api/login
 - Body: User data object
 
 Example Request Body:
@@ -58,14 +58,14 @@ Example Request Body:
 - Status Code: 200 OK
 - Body: {token:'Bearer token'}
 
-### GET /logout
+### GET /api/logout
 
 Description: Logout user from his/her account.
 
 #### Request
 
 - Method: GET
-- Path: /logout
+- Path: /api/logout
 - Header: {Authorization:'Bearer token'}
 
 #### Response

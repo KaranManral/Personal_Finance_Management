@@ -1,4 +1,6 @@
 import express from "express";
+import { fileURLToPath } from 'url';
+import path,{dirname} from "path";
 import bodyParser from "body-parser";
 import jwt from "jsonwebtoken";
 import session from "express-session";
@@ -18,10 +20,15 @@ const app = express();
 const secret = crypto.randomBytes(64).toString("hex"); //Secret Key for generating tokens
 
 //Checking for Validness of string
-const checkInvalidString = (str) => {
+const checkValidString = (str) => {
   const pattern = /^[a-zA-Z0-9@.# ]+$/;
   return pattern.test(str);
 };
+
+// Have Node serve the files for our built React app
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+app.use(express.static(path.resolve(__dirname, '../client/build')));
 
 app.use(
   session({
@@ -34,97 +41,129 @@ app.use(
 let jsonParser = bodyParser.json();
 let urlencodedParser = bodyParser.urlencoded({ extended: false });
 
+app.get("/api/session", (req, res) => {
+  if (req.session) {
+    if (req.session.token) {
+      if (req.session.token.length > 0) {
+        res.statusCode = 200;
+        res.send({ token: req.session.token });
+        return;
+      }
+    }
+  }
+
+  res.statusCode = 404;
+  res.send({ msg: "not active" });
+
+});
+
 //Function to response to post request to register a new user
-app.post("/register", jsonParser, async (req, res) => {
+app.post("/api/register", jsonParser, async (req, res) => {
   let data = req.body;
   let uid = data.uid;
   let pwd = data.password;
   let name = data.name;
 
   if (
-    checkInvalidString(uid) &&
-    checkInvalidString(pwd) &&
-    checkInvalidString(name) &&
-    uid.length<=50 && pwd.length<=20 && name.length<=100
+    uid &&
+    pwd &&
+    name &&
+    checkValidString(uid) &&
+    checkValidString(pwd) &&
+    checkValidString(name) &&
+    uid.length <= 50 &&
+    pwd.length <= 20 &&
+    name.length <= 100
   ) {
     createUser([uid, name, pwd], (err, result) => {
       if (err) {
         res.statusCode = 500;
-        res.send("Creation Failed - Server Error: " + err.code);
+        if (err.code === "ER_DUP_ENTRY")
+          res.send({ msg: "Email address already taken" });
+        else res.send({ msg: "Creation Failed - Server Error: " });
       } else {
         res.statusCode = 200;
-        res.send({"msg":"User Added Successfully"});
+        res.send({ msg: "User Added Successfully" });
       }
     });
   } else {
     res.statusCode = 422;
-    res.send("Data sent is invalid");
+    res.send({ msg: "Data sent is invalid" });
   }
 });
 
 //Logging in User to his account
-app.post("/login", jsonParser, async (req, res) => {
+app.post("/api/login", jsonParser, async (req, res) => {
   let data = req.body;
   let uid = data.uid;
   let pwd = data.password;
 
   //Checking if user already logged in
-  if (!req.session.token) {
-    //Limit false login attempts
-    if (req.session.attempt && req.session.attempt == 5) {
-      setTimeout(() => {
-        req.session.attempt = null;
-        req.session.save();
-      }, 300000);
-      req.session.attempt++;
-      res.statusCode = 429;
-      res.send("Too Many Request! Try Again after 5 minutes.");
-    } else if (req.session.attempt && req.session.attempt > 5) {
-      console.log(req.session.attempt);
-      req.session.attempt++;
-      res.statusCode = 429;
-      res.send("Too Many Request! Try Again after 5 minutes.");
-    } else {
-      if (checkInvalidString(uid) && checkInvalidString(pwd) && uid.length<=50 && pwd.length<=20) {
-        //checking login credentials
-        login([uid, pwd], (err, result) => {
-          if (err) {
-            res.statusCode = 500;
-            res.send("Creation Failed - Server Error: " + err.code);
-          } else {
-            //User provided false credentials
-            if (result.length <= 0) {
-              if (req.session.attempt) req.session.attempt++;
-              else req.session.attempt = 1;
-              res.statusCode = 401;
-              res.send("Invalid Credentials!");
-            }
-            //Setting login session and returning token
-            else {
-              let token = jwt.sign(
-                { uid: result[0].UID, name: result[0].NAME, loggedIn: true },
-                secret
-              );
-              req.session.token = token;
-              req.session.attempt = null;
-              res.statusCode = 200;
-              res.send({ token: token });
-            }
-          }
-        });
-      } else {
-        res.statusCode = 422;
-        res.send("Data sent is invalid");
-      }
+  if (req.session) {
+    if (req.session.token) {
+      res.statusCode = 200;
+      res.send({ msg: "Already Logged In" });
+      return;
     }
+  }
+  //Limit false login attempts
+  if (req.session.attempt && req.session.attempt == 5) {
+    setTimeout(() => {
+      req.session.attempt = null;
+      req.session.save();
+    }, 300000);
+    req.session.attempt++;
+    res.statusCode = 429;
+    res.send({ msg: "Too Many Request! Try Again after 5 minutes." });
+  } else if (req.session.attempt && req.session.attempt > 5) {
+    // console.log(req.session.attempt);
+    req.session.attempt++;
+    res.statusCode = 429;
+    res.send({ msg: "Too Many Request! Try Again after 5 minutes." });
   } else {
-    res.statusCode = 200;
-    res.send({"msg":"Already Logged In"});
+    if (
+      uid &&
+      pwd &&
+      checkValidString(uid) &&
+      checkValidString(pwd) &&
+      uid.length <= 50 &&
+      pwd.length <= 20
+    ) {
+      //checking login credentials
+      login([uid, pwd], (err, result) => {
+        if (err) {
+          res.statusCode = 500;
+          res.send({ msg: "Creation Failed - Server Error: " });
+        } else {
+          //User provided false credentials
+          if (result.length <= 0) {
+            if (req.session.attempt) req.session.attempt++;
+            else req.session.attempt = 1;
+            res.statusCode = 401;
+            res.send({ msg: "Invalid Credentials!" });
+          }
+          //Setting login session and returning token
+          else {
+            let token = jwt.sign(
+              { uid: result[0].UID, name: result[0].NAME, loggedIn: true },
+              secret
+            );
+            req.session.token = token;
+            req.session.attempt = null;
+            res.statusCode = 200;
+            res.send({ token: token });
+          }
+        }
+      });
+    } else {
+      res.statusCode = 422;
+      res.send({ msg: "Data sent is invalid" });
+    }
   }
 });
 
 //Logging out user from his account
-app.get("/logout", (req, res) => {
+app.get("/api/logout", (req, res) => {
   let bHead = req.headers.authorization;
   if (bHead) {
     //Getting token from user to verify authority
@@ -135,14 +174,14 @@ app.get("/logout", (req, res) => {
       req.session.token = null;
       req.session.save();
       res.statusCode = 200;
-      res.send({"msg":"Logged Out"});
+      res.send({ msg: "Logged Out" });
     } else {
       res.statusCode = 401;
-      res.send("Invalid Token");
+      res.send({ msg: "Invalid Token" });
     }
   } else {
     res.statusCode = 401;
-    res.send("Invalid Token");
+    res.send({ msg: "Invalid Token" });
   }
 });
 
@@ -166,25 +205,25 @@ app.get("/transactions", async (req, res) => {
           (err, result) => {
             if (err) {
               res.statusCode = 401;
-              res.send("Unauthorized Access!");
+              res.send({ msg: "Unauthorized Access!" });
             } else {
               res.statusCode = 200;
-              if (result.length <= 0) res.send({"msg":"No Data Available"});
+              if (result.length <= 0) res.send({ msg: "No Data Available" });
               else res.send(result);
             }
           }
         );
       else {
         res.statusCode = 401;
-        res.send("Unauthorized Access!");
+        res.send({ msg: "Unauthorized Access!" });
       }
     } else {
       res.statusCode = 401;
-      res.send("Unauthorized Access!");
+      res.send({ msg: "Unauthorized Access!" });
     }
   } else {
     res.statusCode = 401;
-    res.send("Unauthorized Access!");
+    res.send({ msg: "Unauthorized Access!" });
   }
 });
 
@@ -199,21 +238,22 @@ app.post("/transactions", jsonParser, async (req, res) => {
     let body = req.body; //Data to be inserted
 
     if (user_token === req.session.token) {
-        
-        //Fetching uid from token
-        const uid = jwt.decode(user_token).uid;
+      //Fetching uid from token
+      const uid = jwt.decode(user_token).uid;
 
-      //Setting Transaction Date
-      const date = new Date();
-      const yyyy = date.getFullYear();
-      let mm = date.getMonth() + 1;
-      let dd = date.getDate();
+      if(body.date===""){
+        //Setting Transaction Date
+        const date = new Date();
+        const yyyy = date.getFullYear();
+        let mm = date.getMonth() + 1;
+        let dd = date.getDate();
 
-      if (dd < 10) dd = "0" + dd;
-      if (mm < 10) mm = "0" + mm;
+        if (dd < 10) dd = "0" + dd;
+        if (mm < 10) mm = "0" + mm;
 
-      //Adding Date
-      body["date"] = `${yyyy}-${mm}-${dd}`;
+        // Adding Date
+        body["date"] = `${yyyy}-${mm}-${dd}`;
+      }
 
       //Adding uid
       body["uid"] = uid;
@@ -222,19 +262,19 @@ app.post("/transactions", jsonParser, async (req, res) => {
       await insertData(body, (err, result) => {
         if (err) {
           res.statusCode = 500;
-          res.send("Data Insert Failed - Server Error!");
+          res.send({ msg: "Data Insert Failed - Server Error!" });
         } else {
           res.statusCode = 200;
-          res.send({"msg":"Success - Data Inserted"});
+          res.send({ msg: "Success - Data Inserted" });
         }
       });
     } else {
       res.statusCode = 401;
-      res.send("Unauthorized Access!");
+      res.send({ msg: "Unauthorized Access!" });
     }
   } else {
     res.statusCode = 401;
-    res.send("Invalid Access!");
+    res.send({ msg: "Invalid Access!" });
   }
 });
 
@@ -251,7 +291,7 @@ app.get("/transactions/summary", async (req, res) => {
         await getTransactionsSummary({ uid: data.uid }, (err, result) => {
           if (err) {
             res.statusCode = 401;
-            res.send("Unauthorized Access!");
+            res.send({ msg: "Unauthorized Access!" });
           } else {
             res.statusCode = 200;
             res.send(result);
@@ -259,15 +299,15 @@ app.get("/transactions/summary", async (req, res) => {
         });
       else {
         res.statusCode = 401;
-        res.send("Unauthorized Access!");
+        res.send({ msg: "Unauthorized Access!" });
       }
     } else {
       res.statusCode = 401;
-      res.send("Unauthorized Access!");
+      res.send({ msg: "Unauthorized Access!" });
     }
   } else {
     res.statusCode = 401;
-    res.send("Unauthorized Access!");
+    res.send({ msg: "Unauthorized Access!" });
   }
 });
 
@@ -286,30 +326,35 @@ app.delete("/transactions", async (req, res) => {
           (err, result) => {
             if (err) {
               res.statusCode = 401;
-              res.send("Unauthorized Access!");
+              res.send({ msg: "Unauthorized Access!" });
             } else {
               if (result.affectedRows <= 0) {
                 res.statusCode = 404;
-                res.send("Data not found");
+                res.send({ msg: "Data not found" });
               } else {
                 res.statusCode = 200;
-                res.send({"msg":"Successfully Deleted Entry"});
+                res.send({ msg: "Successfully Deleted Entry" });
               }
             }
           }
         );
       else {
         res.statusCode = 401;
-        res.send("Unauthorized Access!");
+        res.send({ msg: "Unauthorized Access!" });
       }
     } else {
       res.statusCode = 401;
-      res.send("Unauthorized Access!");
+      res.send({ msg: "Unauthorized Access!" });
     }
   } else {
     res.statusCode = 401;
-    res.send("Unauthorized Access!");
+    res.send({ msg: "Unauthorized Access!" });
   }
+});
+
+// All other GET requests not handled before will return our React app
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../client/build', 'index.html'));
 });
 
 //Port for server to listen

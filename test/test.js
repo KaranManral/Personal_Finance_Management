@@ -1,6 +1,6 @@
 import {expect} from "chai";
 import request from "supertest";
-import { application} from "../index.js"; 
+import { application} from "../server/index.js"; 
 import mysql from "mysql";
 
 describe('App Test', () => {
@@ -15,14 +15,14 @@ describe('App Test', () => {
     });
 
     //Test Case to add user to database
-    describe('POST /register', () => {
+    describe('POST /api/register', () => {
         it('should respond with status 200 and JSON',async () => {
             const data = {
                 "uid":"abc@gmail.com",
                 "password":"abc@123",
                 "name": "ABC xyz"
             };
-            const response = await request(application).post('/register').send(data).set('Accept','application/json');
+            const response = await request(application).post('/api/register').send(data).set('Accept','application/json');
             await connection.connect(async (err)=>{
                 if(err)
                     throw err;
@@ -38,13 +38,13 @@ describe('App Test', () => {
     });
 
     //Test Case to test login 
-    describe('POST /login', () => {
+    describe('POST /api/login', () => {
         it('should return with status 200 and token as JSON',async () => {
             const data = {
                 "uid":"karan@gmail.com",
                 "password":"Karan@2002"
             };
-            const response = await request(application).post('/login').send(data);
+            const response = await request(application).post('/api/login').send(data);
 
             expect(response.status).to.equal(200);
             expect(response.body).to.have.property('token');
@@ -59,7 +59,7 @@ describe('App Test', () => {
                 "password":"Karan@2002"
             };
             const agent = request.agent(application); // Use agent to maintain session state
-            let req = await agent.post('/login').send(data);//getting user token for test
+            let req = await agent.post('/api/login').send(data);//getting user token for test
 
             const response = await agent.get('/transactions?fromDate=2002-05-01&toDate=2026-06-29').set('Authorization',`Bearer ${req.body.token}`);
             expect(response.status).to.equal(200);
@@ -78,7 +78,7 @@ describe('App Test', () => {
                 "amount":630000
             };
             const agent = request.agent(application); // Use agent to maintain session state
-            let req = await agent.post('/login').send(data1);//getting user token for test
+            let req = await agent.post('/api/login').send(data1);//getting user token for test
 
             const response = await agent.post('/transactions').send(data2).set('Authorization',`Bearer ${req.body.token}`);
 
@@ -106,7 +106,7 @@ describe('App Test', () => {
                 "password":"Karan@2002"
             };
             const agent = request.agent(application); // Use agent to maintain session state
-            let req = await agent.post('/login').send(data);//getting user token for test
+            let req = await agent.post('/api/login').send(data);//getting user token for test
 
             const response = await agent.get('/transactions/summary').set('Authorization',`Bearer ${req.body.token}`);
             expect(response.status).to.equal(200);
@@ -121,7 +121,7 @@ describe('App Test', () => {
                 "password":"Karan@2002"
             };
             const agent = request.agent(application); // Use agent to maintain session state
-            let req = await agent.post('/login').send(data); //getting user token for test
+            let req = await agent.post('/api/login').send(data); //getting user token for test
 
             const response = await agent.delete('/transactions?id=11').set('Authorization',`Bearer ${req.body.token}`);
 

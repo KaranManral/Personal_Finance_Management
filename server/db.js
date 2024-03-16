@@ -118,7 +118,7 @@ export const getTransactionsSummary = async ({uid},callback)=>{
                     data.total_expense+=x.AMOUNT;
                 }
             });
-            data.total_savings = data.total_income - data.total_expense;
+            data.total_savings = Math.abs(data.total_income - data.total_expense);
             return callback(null,data);
         }
     });

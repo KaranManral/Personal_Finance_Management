@@ -5,10 +5,11 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "test": "mocha"
+    "start": "node server/index.js",
+    "build": "cd client && npm install && npm run build",
+    "test": "mocha test/test.js"
   },
-  "author": "",
+  "author": "Karan Singh Manral",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.2",
@@ -22,5 +23,26 @@
     "mocha": "^10.3.0",
     "nodemon": "^3.1.0",
     "supertest": "^6.3.4"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "engines": {
+    "node": "v18.17.1"
   }
 }
