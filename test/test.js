@@ -1,17 +1,17 @@
 import {expect} from "chai";
 import request from "supertest";
 import { application} from "../server/index.js"; 
-import mysql from "mysql";
+import mysql from "mysql2";
 
 describe('App Test', () => {
     //Creating SQL connection to rollback changes made during test
     const connection = mysql.createConnection({
-        host: "sql6.freesqldatabase.com",
-        port: "3306",
-        user: "sql6691938",
-        password: "Heg37efmyy",
-        database: "sql6691938",
-        timezone: "utc"
+        host: "sql.freedb.tech",
+    port: "3306",
+    user: "freedb_root29",
+    password: "YgNSb$h&yag*Sy8",
+    database: "freedb_finance_management",
+    timezone: "+00:00"
     });
 
     //Test Case to add user to database
@@ -23,12 +23,8 @@ describe('App Test', () => {
                 "name": "ABC xyz"
             };
             const response = await request(application).post('/api/register').send(data).set('Accept','application/json');
-            await connection.connect(async (err)=>{
-                if(err)
-                    throw err;
-                console.log("CONNECTED!");
-            });
-            await connection.query("DELETE FROM USERS WHERE UID=?",["abc@gmail.com"],(err,result)=>{
+            
+            connection.query("DELETE FROM USERS WHERE UID=?",["abc@gmail.com"],(err,result)=>{
                 // console.log(err,result);
                 // await connection.end();
             });
@@ -82,13 +78,7 @@ describe('App Test', () => {
 
             const response = await agent.post('/transactions').send(data2).set('Authorization',`Bearer ${req.body.token}`);
 
-            await connection.connect(async (err)=>{
-                if(err)
-                    throw err;
-                console.log("CONNECTED!");
-            });
-
-            await connection.query("DELETE FROM TRANSACTIONS WHERE UID=? ORDER BY TID DESC LIMIT 1",["karan@gmail.com"],(err,result)=>{
+            connection.query("DELETE FROM TRANSACTIONS WHERE UID=? ORDER BY TID DESC LIMIT 1",["karan@gmail.com"],(err,result)=>{
                 console.log(result.affectedRows);
                 // connection.end();
             });
@@ -125,13 +115,7 @@ describe('App Test', () => {
 
             const response = await agent.delete('/transactions?id=11').set('Authorization',`Bearer ${req.body.token}`);
 
-            await connection.connect(async (err)=>{
-                if(err)
-                    throw err;
-                console.log("CONNECTED!");
-            });
-
-            await connection.query("INSERT INTO TRANSACTIONS VALUES(11,'income',530000,'2024-03-10','karan@gmail.com')",["karan@gmail.com"],(err,result)=>{
+            connection.query("INSERT INTO TRANSACTIONS VALUES(11,'income',530000,'2024-03-10','karan@gmail.com')",["karan@gmail.com"],(err,result)=>{
                 console.log(result.affectedRows);
                 // connection.end();
             });

@@ -1,14 +1,28 @@
 import React, { useState, useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
 
 export default function Add() {
   const [amount, setAmount] = useState(0);
   const [type, setType] = useState("income");
   const [date, setDate] = useState("");
+  const [userDetails, setUserDetails] = useState({});
 
   useEffect(() => {
     //do something
     // console.log(amount, type, date);
   });
+
+  useEffect(() => {
+    let token = localStorage.getItem("token");
+    if (token) {
+      if (token.length > 0) {
+        let ob = jwtDecode(token);
+        if (ob.loggedIn) {
+          setUserDetails(ob);
+        } else window.location.href = "/login";
+      } else window.location.href = "/login";
+    } else window.location.href = "/login";
+  }, []);
 
   function formSubmit(e) {
     e.preventDefault();

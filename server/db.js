@@ -1,13 +1,13 @@
-import mysql from "mysql"; //MySQL package
+import mysql from "mysql2"; //MySQL package
 
 //Creating database connection
 const connection = mysql.createConnection({
-    host: "sql6.freesqldatabase.com",
+    host: "sql.freedb.tech",
     port: "3306",
-    user: "sql6691938",
-    password: "Heg37efmyy",
-    database: "sql6691938",
-    timezone: "utc"
+    user: "freedb_root29",
+    password: "YgNSb$h&yag*Sy8",
+    database: "freedb_finance_management",
+    timezone: "+00:00"
 });
 
 //Connecting to Database
@@ -66,7 +66,7 @@ export const insertData = async (data,callback)=>{
             return callback(err,"");
         }
     let sql = "INSERT INTO TRANSACTIONS(TTYPE,AMOUNT,TDATE,UID) VALUES(?,?,?,?)";
-    await connection.query(sql,[data.type,data.amount,data.date,data.uid],(err,result)=>{
+    connection.query(sql,[data.type,data.amount,data.date,data.uid],(err,result)=>{
         if(err)
             return callback(err,"");
         return callback(null,result);
@@ -118,7 +118,8 @@ export const getTransactionsSummary = async ({uid},callback)=>{
                     data.total_expense+=x.AMOUNT;
                 }
             });
-            data.total_savings = Math.abs(data.total_income - data.total_expense);
+            let sa = data.total_income - data.total_expense;
+            data.total_savings = (sa<0)?0:sa;
             return callback(null,data);
         }
     });
