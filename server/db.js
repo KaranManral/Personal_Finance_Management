@@ -1,13 +1,13 @@
-import mysql from "mysql2"; //MySQL package
+import mysql from "mysql"; //MySQL package
 
 //Creating database connection
 const connection = mysql.createConnection({
-    host: "sql.freedb.tech",
+    host: "sql3.freemysqlhosting.net",
     port: "3306",
-    user: "freedb_root29",
-    password: "YgNSb$h&yag*Sy8",
-    database: "freedb_finance_management",
-    timezone: "+00:00"
+    user: "sql3691996",
+    password: "IHHbGU2jCX",
+    database: "sql3691996",
+    timezone: "utc"
 });
 
 //Connecting to Database
